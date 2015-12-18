@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Wasted Time</string>
     <string name="title_activity_timer">Timer</string>
+    <string name="firebase_url">https://luminous-fire-8474.firebaseio.com/</string>
 </resources>

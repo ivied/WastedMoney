@@ -24,12 +24,9 @@ public class TimeToMoneyConverter {
 
     public static Money convertMillis(long millis, double hourlyRate){
         double hours = (double) millis / DateUtils.HOUR_IN_MILLIS;
-
         int money = (int) (hours * hourlyRate * 100);
         int dollars = money /100 ;
         int cents = money % 100;
-
-
         return new Money(dollars, cents);
     }
 

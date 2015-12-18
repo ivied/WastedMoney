@@ -18,42 +18,46 @@ import com.romainpiel.shimmer.ShimmerTextView;
 
 public class TimerActivity extends AppCompatActivity {
     public static final String TIMER_IS_ACTIVE = "timerIsActive";
+    public static final String TIME_FIELD = "time";
+
     private Firebase myFirebaseRef;
-    private FloatingActionButton fab;
+
+    private FloatingActionButton mFab;
     private ShimmerTextView moneyView;
     private boolean mTimerIsActive;
-    MediaPlayer mPennySound;
-    MediaPlayer mDollarSound;
-    MediaPlayer mCoinsSound;
+
+    private MediaPlayer mPennySound;
+    private MediaPlayer mDollarSound;
+    private MediaPlayer mCoinsSound;
+
     private Handler timerHandler = new Handler();
     private TimerRunnable timerRunnable;
-    private long increment;
-    private  double  hourlyRate = 15;
+    private long mIncrement;
+
+    private  double mHourlyRate = 15;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Firebase.setAndroidContext(this);
-        myFirebaseRef = new Firebase("https://luminous-fire-8474.firebaseio.com/");
+        myFirebaseRef = new Firebase(getString(R.string.firebase_url));
 
         setContentView(R.layout.activity_timer);
+        mFab = (FloatingActionButton) findViewById(R.id.fab);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         mPennySound = MediaPlayer.create(this, R.raw.penny);
         mDollarSound = MediaPlayer.create(this, R.raw.dollar);
         mCoinsSound = MediaPlayer.create(this, R.raw.coins);
 
-        fab = (FloatingActionButton) findViewById(R.id.fab);
-
-        fab.setOnClickListener(new View.OnClickListener() {
+        mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
-                if(mTimerIsActive)      stopTimer();
-                else          startTimer();
-
+                if (mTimerIsActive) stopTimer();
+                else startTimer();
             }
-
-
         });
 
         Shimmer shimmer = new Shimmer();
@@ -67,17 +71,11 @@ public class TimerActivity extends AppCompatActivity {
         myFirebaseRef.child("time").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-
                 Long value = (Long) snapshot.getValue();
-                if(value != null) {
-                    increment = value;
+                if (value != null) {
+                    mIncrement = value;
                 }
-
-                moneyView.setText(TimeToMoneyConverter.moneyToString(TimeToMoneyConverter.convertMillis(increment, hourlyRate)));
-                //Snackbar.make(fab, " = " + increment, Snackbar.LENGTH_LONG)
-                //        .setAction("Action", null).show();
-
-
+                moneyView.setText(TimeToMoneyConverter.moneyToString(TimeToMoneyConverter.convertMillis(mIncrement, mHourlyRate)));
             }
 
             @Override public void onCancelled(FirebaseError error) {
@@ -90,29 +88,29 @@ public class TimerActivity extends AppCompatActivity {
         mTimerIsActive = false;
         timerHandler.removeCallbacks(timerRunnable);
 
-        fab.setImageResource(android.R.drawable.ic_lock_idle_alarm);
-        fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
+        mFab.setImageResource(android.R.drawable.ic_lock_idle_alarm);
+        mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
     }
 
     private void startTimer() {
-        myFirebaseRef.child("time").addListenerForSingleValueEvent(new ValueEventListener() {
+        myFirebaseRef.child(TIME_FIELD).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
 
                 Long value = (Long) snapshot.getValue();
                 if (value != null) {
-                    increment = value;
+                    mIncrement = value;
                 }
                 mTimerIsActive = true;
-                timerRunnable = new TimerRunnable(increment);
+                timerRunnable = new TimerRunnable(mIncrement);
                 timerHandler.postDelayed(timerRunnable, 0);
             }
 
             @Override public void onCancelled(FirebaseError error) {
             }
         });
-        fab.setImageResource(android.R.drawable.ic_media_pause);
-        fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorPrimary)));
+        mFab.setImageResource(android.R.drawable.ic_media_pause);
+        mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorPrimary)));
     }
 
 
@@ -130,9 +128,10 @@ public class TimerActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-
             long millis = System.currentTimeMillis() - mStartTime + increment;
-            TimeToMoneyConverter.Money money = TimeToMoneyConverter.convertMillis(millis, hourlyRate);
+
+            TimeToMoneyConverter.Money money = TimeToMoneyConverter.convertMillis(millis, mHourlyRate);
+
             if(money.getDollars() != mDollars){
                 mDollarSound.start();
             }else if ( mCents/10 != money.getCents()/10){
@@ -140,12 +139,11 @@ public class TimerActivity extends AppCompatActivity {
             }else if (mCents != money.getCents()) {
                 mPennySound.start();
             }
+
             mDollars = money.getDollars();
             mCents = money.getCents();
             moneyView.setText(TimeToMoneyConverter.moneyToString(money));
-            myFirebaseRef.child("time").setValue(millis);
-
-
+            myFirebaseRef.child(TIME_FIELD).setValue(millis);
             timerHandler.postDelayed(this, 500);
         }
     };
@@ -157,8 +155,8 @@ public class TimerActivity extends AppCompatActivity {
     }
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        if(savedInstanceState.getBoolean(TIMER_IS_ACTIVE))      startTimer();
-        else          stopTimer();
+        if(savedInstanceState.getBoolean(TIMER_IS_ACTIVE)) startTimer();
+        else  stopTimer();
     }
 
 
